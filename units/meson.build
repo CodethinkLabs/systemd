@@ -656,6 +656,14 @@ units = [
           'conditions' : ['HAVE_LIBCRYPTSETUP'],
           'symlinks' : ['sysinit.target.wants/'],
         },
+        {
+          'file' : 'virtiofsd@.service.in',
+          'conditions' : ['ENABLE_VIRTIOFSD'],
+        },
+        {
+          'file' : 'virtiofsd@.socket',
+          'conditions' : ['ENABLE_VIRTIOFSD'],
+        },
 ]
 
 foreach unit : units

@@ -1593,6 +1593,7 @@ foreach term : ['analyze',
                 'userdb',
                 'utmp',
                 'vconsole',
+                'virtiofsd',
                 'xdg-autostart']
         have = get_option(term)
         name = 'ENABLE_' + term.underscorify().to_upper()
@@ -1630,6 +1631,21 @@ conf.set10('ENABLE_NSS', enable_nss)
 conf.set10('ENABLE_TIMEDATECTL', get_option('timedated') or get_option('timesyncd'))
 
 conf.set10('SYSTEMD_SLOW_TESTS_DEFAULT', slow_tests)
+
+enable_virtiofsd = conf.get('ENABLE_VIRTIOFSD') == 1
+if enable_virtiofsd
+        path = get_option('virtiofsd-path')
+        if path != ''
+                message('Using @0@ for virtiofsd'.format(path))
+        else
+                exe = find_program('virtiofsd',
+                                   '/usr/sbin/virtiofsd',
+                                   '/sbin/virtiofsd',
+                                   required: true)
+                path = exe.full_path()
+        endif
+        conf.set_quoted('VIRTIOFSD_PATH', path)
+endif
 
 ############################################################
 
@@ -2694,7 +2710,8 @@ summary({
         'default user $PATH' :
                 default_user_path != '' ? default_user_path : '(same as system services)',
         'systemd service watchdog' :        service_watchdog == '' ? 'disabled' : service_watchdog,
-        'time epoch' :                      '@0@ (@1@)'.format(time_epoch, alt_time_epoch)})
+        'time epoch' :                      '@0@ (@1@)'.format(time_epoch, alt_time_epoch),
+        'virtiofsd' :                       '@0@'.format(get_option('virtiofsd'))})
 
 # TODO:
 # CFLAGS:   ${OUR_CFLAGS} ${CFLAGS}
@@ -2822,6 +2839,7 @@ foreach tuple : [
         ['link-journalctl-shared', get_option('link-journalctl-shared')],
         ['link-boot-shared',       get_option('link-boot-shared')],
         ['link-portabled-shared',  get_option('link-portabled-shared')],
+        ['virtiofsd',              get_option('virtiofsd')],
         ['first-boot-full-preset'],
         ['fexecve'],
         ['standalone-binaries',    get_option('standalone-binaries')],
