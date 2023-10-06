@@ -13,8 +13,5 @@ Requires=virtiofsd@%i.socket
 After=virtiofsd@%i.socket
 
 [Service]
-Type=notify
-ExecStart={{VIRTIOFSD_PATH}} --fd ${LISTEN_FDS} --shared-dir %I
-RuntimeDirectory=virtiofsd/%i
-RuntimeDirectoryPreserve=yes
+ExecStart={{VIRTIOFSD_PATH}} --fd 3 --shared-dir %I
 Sockets=virtiofsd@%i.socket

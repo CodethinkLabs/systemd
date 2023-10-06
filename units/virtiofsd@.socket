@@ -9,9 +9,22 @@
 
 [Unit]
 Description=virtiofsd Socket for directory %I
-StopWhenUnneeded=yes
 
 [Socket]
 Service=virtiofsd@%i.service
-ListenStream=/run/virtiofsd/%i/socket
+ListenStream=/run/virtiofsd-%i-socket
+# FIXME: Making this socket world-writable and the service running as root
+# is a massive security hole.
+# A fix for this may be to define a user and group for virtiofsd.
+# Add users that are allowed to use virtiofsd to that group,
+# and add the virtiofsd user to the group of users who want their directory
+# to be mountable by virtiofsd.
+# This is left unfixed because we are not certain we want virtiofsd to run
+# as a persistent service, as an ephemeral one started by vmspawn
+# would fit the lifecycle of vmspawn better, even if it would be acceptable
+# for persistent services.
+# Additionally, VM permission groups should probably be M:N instead of
+# 1:N, so instead of having to configure another user per virtiofsd instance
+# it probably makes the most sense for the VMs to run as the user's UID
+# or a private one for services.
 SocketMode=0666
