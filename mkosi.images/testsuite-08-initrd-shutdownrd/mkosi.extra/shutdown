@@ -1,0 +1,4 @@
+#!/usr/bin/bash -eu
+echo "Hello from shutdown initrd"
+rm -f /run/initramfs/shutdown
+exec /usr/lib/systemd/systemd-shutdown "$@"
