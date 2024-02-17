@@ -398,7 +398,7 @@ if get_option('integration-tests') != false
                 '79': 'TEST-79-MEMPRESS',
                 '80': 'TEST-80-NOTIFYACCESS',
                 #'81': 'TEST-81-GENERATORS', # fstab-generator fails to run
-                #'82': 'TEST-82-SOFTREBOOT', # needs to remove end.service
+                '82': 'TEST-82-SOFTREBOOT',
                 '83': 'TEST-83-BTRFS',
         }
         foreach test_number, dirname : integration_tests
