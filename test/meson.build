@@ -362,7 +362,7 @@ if get_option('integration-tests') != false
                 '31': 'TEST-31-DEVICE-ENUMERATION',
                 '32': 'TEST-32-OOMPOLICY',
                 '34': 'TEST-34-DYNAMICUSERMIGRATE',
-                #'35': 'TEST-35-LOGIN', # logind wakeup doesn't work for some reason
+                '35': 'TEST-35-LOGIN', # logind wakeup doesn't work for some reason
                 '36': 'TEST-36-NUMAPOLICY',
                 '38': 'TEST-38-FREEZER',
                 #'43': 'TEST-43-PRIVATEUSER-UNPRIV', # needs minimal images
@@ -377,14 +377,14 @@ if get_option('integration-tests') != false
                 #'58': 'TEST-58-REPART', # host repart config interferes with test
                 # Can be flaky when overloaded if daemon-reload is too slow to be rate-limited
                 '59': 'TEST-59-RELOADING-RESTART',
-                '60': 'TEST-60-MOUNT-RATELIMIT', # expects to write to /usr
+                '60': 'TEST-60-MOUNT-RATELIMIT',
                 '62': 'TEST-62-RESTRICT-IFACES',
                 '63': 'TEST-63-PATH',
                 #'64': 'TEST-64-UDEV-STORAGE', # requires image customisation for test images, overrides test runner extensively
                 '65': 'TEST-65-ANALYZE',
                 '66': 'TEST-66-DEVICE-ISOLATION',
                 #'67': 'TEST-67-INTEGRITY', # can't find integritysetup
-                '68': 'TEST-68-PROPAGATE-EXIT-STATUS', # no qemu but works
+                '68': 'TEST-68-PROPAGATE-EXIT-STATUS',
                 #'69': 'TEST-69-SHUTDOWN', # customises image and removes end.service from kernel cmdline
                 #'70': 'TEST-70-TPM2', # tpm2 permission problems
                 '71': 'TEST-71-HOSTNAME',
