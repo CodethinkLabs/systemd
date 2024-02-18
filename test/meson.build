@@ -346,30 +346,30 @@ if get_option('integration-tests') != false
                 '08': 'TEST-08-INITRD',
                 '09': 'TEST-09-REBOOT',
                 '13': 'TEST-13-NSPAWN',
-                '15': 'TEST-15-DROPIN', # requires writable /usr, configured to not run under qemu
-                '16': 'TEST-16-EXTEND-TIMEOUT', # unclear why NO_QEMU
+                '15': 'TEST-15-DROPIN',
+                '16': 'TEST-16-EXTEND-TIMEOUT',
                 '17': 'TEST-17-UDEV', # Can be flaky when overloaded if timeout abort test is slow
                 '18': 'TEST-18-FAILUREACTION',
                 '19': 'TEST-19-CGROUP',
                 '21': 'TEST-21-DFUZZER',
-                '22': 'TEST-22-TMPFILES', # Fails due to mkosi read-only root
-                '23': 'TEST-23-UNIT-FILE', # Fails due to requesting own name being denied by policy
-                '24': 'TEST-24-CRYPTSETUP', # Needs encrypted /var customisations, including extra device
+                '22': 'TEST-22-TMPFILES',
+                '23': 'TEST-23-UNIT-FILE',
+                '24': 'TEST-24-CRYPTSETUP',
                 '25': 'TEST-25-IMPORT',
-                '26': 'TEST-26-SYSTEMCTL', # Expects writable /usr
-                '29': 'TEST-29-PORTABLE', # Requires creation of portable images
+                '26': 'TEST-26-SYSTEMCTL',
+                '29': 'TEST-29-PORTABLE',
                 '30': 'TEST-30-ONCLOCKCHANGE',
                 '31': 'TEST-31-DEVICE-ENUMERATION',
                 '32': 'TEST-32-OOMPOLICY',
                 '34': 'TEST-34-DYNAMICUSERMIGRATE',
-                '35': 'TEST-35-LOGIN', # logind wakeup doesn't work for some reason
+                '35': 'TEST-35-LOGIN',
                 '36': 'TEST-36-NUMAPOLICY',
                 '38': 'TEST-38-FREEZER',
-                #'43': 'TEST-43-PRIVATEUSER-UNPRIV', # needs minimal images
+                '43': 'TEST-43-PRIVATEUSER-UNPRIV',
                 '44': 'TEST-44-LOG-NAMESPACE',
                 '45': 'TEST-45-TIMEDATE',
                 '46': 'TEST-46-HOMED',
-                #'50': 'TEST-50-DISSECT', # needs minimal images
+                '50': 'TEST-50-DISSECT',
                 '52': 'TEST-52-HONORFIRSTSHUTDOWN', # qemu disabled, but works
                 #'53': 'TEST-53-ISSUE-16347', # needs qemu cmdline customisation
                 #'54': 'TEST-54-CREDS', # needs kernel cmdline, nspawn cmdline and initd extra customisation

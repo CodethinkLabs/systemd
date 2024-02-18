@@ -3,7 +3,7 @@
 set -eu
 
 for f in "$BUILDROOT"/usr/share/*.verity.sig; do
-    jq --raw-output '.rootHash' "$f" >"${f%.verity.sig}.roothash"
+    jq --join-output '.rootHash' "$f" >"${f%.verity.sig}.roothash"
 done
 
 cp --archive --recursive --no-target-directory --reflink=auto "$BUILDROOT"/etc "$BUILDROOT"/usr/share/factory/mkosi/etc
