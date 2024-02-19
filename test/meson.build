@@ -373,7 +373,7 @@ if get_option('integration-tests') != false
                 '52': 'TEST-52-HONORFIRSTSHUTDOWN',
                 '53': 'TEST-53-ISSUE-16347',
                 '54': 'TEST-54-CREDS',
-                #'55': 'TEST-55-OOMD', # needs image customisation to add swap and customise init scope
+                '55': 'TEST-55-OOMD',
                 #'58': 'TEST-58-REPART', # host repart config interferes with test
                 # Can be flaky when overloaded if daemon-reload is too slow to be rate-limited
                 '59': 'TEST-59-RELOADING-RESTART',

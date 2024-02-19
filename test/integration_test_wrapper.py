@@ -32,14 +32,18 @@ BUILTIN_KERNEL_COMMAND_LINE_ARGS = (
     'systemd.emergency=exit',
     'systemd.crash_shell',
     'systemd.log_level=debug',
+    'systemd.log_target=console',
     'systemd.log_ratelimit_kmsg=0',
-    'systemd.journald.forward_to_console',
-    'systemd.journald.max_level_console=warning',
+    #'systemd.journald.forward_to_console',
+    #'systemd.journald.max_level_console=debug',
     'printk.devkmsg=on',
     'rw',
     'systemd.deault_device_timeout_sec=20',
     'systemd.early_core_pattern=/core',
     'systemd.firstboot=no',
+    'noresume',
+    'oops=panic',
+    'panic=1',
 )
 
 parser = ArgumentParser(description=__doc__)
@@ -176,6 +180,7 @@ def main():
             run_mkosi(['--qemu-smp=2',
                        '--qemu-mem=2G',
                        '--credential', f"system.machine_id={machine_id}",
+                       '--kernel-command-line-extra=',
                        '--kernel-command-line-extra',
                        ' '.join(BUILTIN_KERNEL_COMMAND_LINE_ARGS),
                       ] + args.mkosi_args + ['qemu'],
