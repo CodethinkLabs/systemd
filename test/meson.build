@@ -400,6 +400,7 @@ if get_option('integration-tests') != false
                 #'81': 'TEST-81-GENERATORS', # fstab-generator fails to run
                 '82': 'TEST-82-SOFTREBOOT',
                 '83': 'TEST-83-BTRFS',
+                '84': 'TEST-84-STORAGETM',
         }
         foreach test_number, dirname : integration_tests
                 test_unit_name = f'testsuite-@test_number@.service'
