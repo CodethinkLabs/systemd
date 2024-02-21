@@ -374,13 +374,13 @@ if get_option('integration-tests') != false
                 '53': 'TEST-53-ISSUE-16347',
                 '54': 'TEST-54-CREDS',
                 '55': 'TEST-55-OOMD',
-                #'58': 'TEST-58-REPART', # host repart config interferes with test
+                '58': 'TEST-58-REPART',
                 # Can be flaky when overloaded if daemon-reload is too slow to be rate-limited
                 '59': 'TEST-59-RELOADING-RESTART',
                 '60': 'TEST-60-MOUNT-RATELIMIT',
                 '62': 'TEST-62-RESTRICT-IFACES',
                 '63': 'TEST-63-PATH',
-                #'64': 'TEST-64-UDEV-STORAGE', # requires image customisation for test images, overrides test runner extensively
+                '64': 'TEST-64-UDEV-STORAGE',
                 '65': 'TEST-65-ANALYZE',
                 '66': 'TEST-66-DEVICE-ISOLATION',
                 #'67': 'TEST-67-INTEGRITY', # can't find integritysetup
@@ -422,10 +422,17 @@ if get_option('integration-tests') != false
                         ],
                         'depends' : [system_mkosi, executables_by_name['systemd-dissect']],
                         'timeout' : 600,
+                        'skip_default_test' : false,
                 }
 
+                # TODO: This fs.exists call isn't included in rebuild logic
+                # so if you add a new meson.build in a subdir
+                # you need to touch another build file to get it to reparse.
                 if fs.exists(dirname / 'meson.build')
                         subdir(dirname)
+                endif
+                if test_params['skip_default_test'] == true
+                        continue
                 endif
                 args = ['--mkosi-image-name', test_params['mkosi_image_name'],
                         '--mkosi-output-path', test_params['mkosi_output_path'],

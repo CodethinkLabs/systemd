@@ -9,7 +9,7 @@ with the expectation that as part of formally defining the API it will be tidy.
 '''
 
 from argparse import ArgumentParser
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager, suppress, ExitStack
 from fcntl import flock, LOCK_EX, LOCK_NB, LOCK_UN
 from hashlib import sha256
 from json import loads as json_loads
@@ -29,6 +29,7 @@ log = logging_get_logger(__name__)
 
 # TODO: Deduplicate this with top-level mkosi.conf somehow
 BUILTIN_KERNEL_COMMAND_LINE_ARGS = (
+    'systemd.hostname=H',
     'systemd.emergency=exit',
     'systemd.crash_shell',
     'systemd.log_level=debug',
@@ -50,6 +51,7 @@ parser = ArgumentParser(description=__doc__)
 parser.add_argument('--mkosi-image-name', required=True)
 parser.add_argument('--mkosi-output-path', required=True, type=Path)
 parser.add_argument('--test-unit-name', required=True)
+parser.add_argument('--test-basename', type=Path, default=None)
 parser.add_argument('--hook-module', type=Path, default=None)
 parser.add_argument('mkosi_args', nargs="*")
 
@@ -105,9 +107,12 @@ def main():
               f"mkosi output path: {args.mkosi_output_path}\n"
               f"test unit name: {args.test_unit_name}\n"
               f"mkosi args: {args.mkosi_args}\n"
+              f"test basename: {args.test_basename}\n"
               f"hook module: {args.hook_module}")
 
-    per_test_output_dir = args.mkosi_output_path.with_name(args.test_unit_name)
+    test_basename = args.test_basename or args.test_unit_name
+    per_test_output_dir = args.mkosi_output_path.parent / test_basename
+    per_test_output_dir.parent.mkdir(parents=True, exist_ok=True)
     log.debug(f"Copying {args.mkosi_output_path.absolute()} output dir "
               f"to per-test path {per_test_output_dir.absolute()}")
 
@@ -118,7 +123,9 @@ def main():
         sys_modules['hook'] = hook
         spec.loader.exec_module(hook)
 
-    with lock_file(per_test_output_dir):
+    with ExitStack() as stack:
+        stack.enter_context(lock_file(per_test_output_dir))
+
         with TemporaryDirectory(dir=per_test_output_dir.parent.absolute(),
                                 prefix=f".{per_test_output_dir.name}",
                                 suffix=".tmp") as td:
@@ -174,56 +181,64 @@ def main():
         machine_id = sha256(args.test_unit_name.encode()).hexdigest()[:32]
         log.debug(f"Derived machine-id {machine_id} for VM")
 
-        with NamedTemporaryFile() as console_log:
-            log.debug(f"Capturing mkosi console log to {console_log.name}")
+        console_log = stack.enter_context(NamedTemporaryFile())
+        log.debug(f"Capturing mkosi console log to {console_log.name}")
 
-            run_mkosi(['--qemu-smp=2',
-                       '--qemu-mem=2G',
-                       '--credential', f"system.machine_id={machine_id}",
-                       '--kernel-command-line-extra=',
-                       '--kernel-command-line-extra',
-                       ' '.join(BUILTIN_KERNEL_COMMAND_LINE_ARGS),
-                      ] + args.mkosi_args + ['qemu'],
-                      check=True, stderr=STDOUT, stdout=console_log)
-            console_log.seek(0)
-            copyfileobj(console_log, stdout.buffer)
+        mkosi_args = ['--qemu-smp=2',
+                      '--qemu-mem=2G',
+                      '--credential', f"system.machine_id={machine_id}",
+                      '--kernel-command-line-extra=',
+                      '--kernel-command-line-extra',
+                      ' '.join(BUILTIN_KERNEL_COMMAND_LINE_ARGS),
+                     ] + args.mkosi_args
 
-            result = run_mkosi(['--json', 'summary'],
-                               capture_output=True,
-                               check=True)
-            summary = json_loads(result.stdout)
-            image_path = [f"{image['OutputDirectory']}/{image['Output']}"
-                          for image in summary['Images']
-                          if image['Image'] == args.mkosi_image_name][0]
-            log.debug(f"Discovered disk image path {image_path}")
+        qemu_opts = []
 
-            mounted_disk = dissect_mount
-            if hook is not None and hasattr(hook, 'mounted_disk'):
-                log.debug("Using hook.mounted_disk")
-                mounted_disk = hook.mounted_disk
+        if hook is not None and hasattr(hook, 'setup'):
+            # TODO: Think about the setup API supporting running vmspawn directly
+            stack.enter_context(hook.setup(mkosi_args, qemu_opts))
 
-            try:
-                with mounted_disk(image_path) as mountpoint:
-                    mountpoint = Path(mountpoint)
+        run_mkosi(mkosi_args + ['qemu'] + qemu_opts,
+                  check=True, stderr=STDOUT, stdout=console_log)
+        console_log.seek(0)
+        copyfileobj(console_log, stdout.buffer)
 
-                    if hook is not None and hasattr(hook, 'check_result'):
-                        log.debug("Running check_result hook")
-                        console_log.seek(0)
-                        hook.check_result(mountpoint, console_log)
+        result = run_mkosi(['--json', 'summary'],
+                           capture_output=True,
+                           check=True)
+        summary = json_loads(result.stdout)
+        image_path = [f"{image['OutputDirectory']}/{image['Output']}"
+                      for image in summary['Images']
+                      if image['Image'] == args.mkosi_image_name][0]
+        log.debug(f"Discovered disk image path {image_path}")
 
-                    if not (mountpoint / "testok").exists():
-                        log.debug("Test failed, /testok not present")
-                        exit(1)
-            except BaseException:
-                log.debug("Attempting journalctl to discover test failure")
-                run_mkosi(['journalctl',
-                           '--boot',
-                           '--unit', args.test_unit_name,
-                          ])
-                raise
-            else:
-                log.debug("Test succeeded, cleaning up")
-                rmtree(per_test_output_dir)
+        mounted_disk = dissect_mount
+        if hook is not None and hasattr(hook, 'mounted_disk'):
+            log.debug("Using hook.mounted_disk")
+            mounted_disk = hook.mounted_disk
+
+        try:
+            with mounted_disk(image_path) as mountpoint:
+                mountpoint = Path(mountpoint)
+
+                if hook is not None and hasattr(hook, 'check_result'):
+                    log.debug("Running check_result hook")
+                    console_log.seek(0)
+                    hook.check_result(mountpoint, console_log)
+
+                if not (mountpoint / "testok").exists():
+                    log.debug("Test failed, /testok not present")
+                    exit(1)
+        except BaseException:
+            log.debug("Attempting journalctl to discover test failure")
+            run_mkosi(['journalctl',
+                       '--boot',
+                       '--unit', args.test_unit_name,
+                      ])
+            raise
+        else:
+            log.debug("Test succeeded, cleaning up")
+            rmtree(per_test_output_dir)
 
 
 if __name__ == '__main__':
