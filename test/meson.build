@@ -390,7 +390,7 @@ if get_option('integration-tests') != false
                 '71': 'TEST-71-HOSTNAME',
                 '72': 'TEST-72-SYSUPDATE',
                 '73': 'TEST-73-LOCALE', # expects to write to /usr
-                #'74': 'TEST-74-AUX-UTILS', # needs to customise machine id
+                '74': 'TEST-74-AUX-UTILS', # needs to customise machine id
                 #'75': 'TEST-75-RESOLVED', # image customisation to install knot
                 '76': 'TEST-76-SYSCTL',
                 #'77': 'TEST-77-OPENFILE', # image customisation for test files
