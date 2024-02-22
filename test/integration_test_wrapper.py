@@ -165,7 +165,7 @@ def main():
                       f"{per_test_output_dir.absolute()}")
             rename(td, per_test_output_dir)
 
-        def run_mkosi(mkosi_args, **kwargs):
+        def run_mkosi(mkosi_args, run=run, **kwargs):
             clargs = [
                 'mkosi',
                 '--directory=..',
@@ -199,7 +199,10 @@ def main():
             stack.enter_context(hook.setup(mkosi_args, qemu_opts))
 
         run_mkosi(mkosi_args + ['qemu'] + qemu_opts,
-                  check=True, stderr=STDOUT, stdout=console_log)
+                  check=True, stderr=STDOUT, stdout=console_log,
+                  **({'run': hook.wrap_run}
+                     if hook is not None and hasattr(hook, 'wrap_run')
+                     else {}))
         console_log.seek(0)
         copyfileobj(console_log, stdout.buffer)
 

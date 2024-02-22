@@ -385,7 +385,7 @@ if get_option('integration-tests') != false
                 '66': 'TEST-66-DEVICE-ISOLATION',
                 '67': 'TEST-67-INTEGRITY',
                 '68': 'TEST-68-PROPAGATE-EXIT-STATUS',
-                #'69': 'TEST-69-SHUTDOWN', # customises image and removes end.service from kernel cmdline
+                '69': 'TEST-69-SHUTDOWN',
                 #'70': 'TEST-70-TPM2', # tpm2 permission problems
                 '71': 'TEST-71-HOSTNAME',
                 '72': 'TEST-72-SYSUPDATE',
