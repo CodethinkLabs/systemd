@@ -28,3 +28,7 @@ disable auditd.service
 
 # systemd-timesyncd is not enabled by default in the default systemd preset so enable it here instead.
 enable systemd-timesyncd.service
+
+# systemd-importd is too new for there to be distro policy on whether to start it
+# but we need to start it for test purposes
+enable systemd-importd.service

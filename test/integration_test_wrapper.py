@@ -30,13 +30,6 @@ log = logging_get_logger(__name__)
 # TODO: Deduplicate this with top-level mkosi.conf somehow
 BUILTIN_KERNEL_COMMAND_LINE_ARGS = (
     'systemd.hostname=H',
-    'systemd.crash_shell',
-    'systemd.log_level=debug',
-    'systemd.log_target=console',
-    'systemd.log_ratelimit_kmsg=0',
-    'systemd.journald.forward_to_console',
-    'systemd.journald.max_level_console=warn',
-    'printk.devkmsg=on',
     'rw',
     'systemd.default_device_timeout_sec=20',
     'systemd.early_core_pattern=/core',

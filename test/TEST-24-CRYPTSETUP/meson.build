@@ -7,18 +7,23 @@ testsuite_24_keydev_root = custom_target('testsuite_24_keyfile',
         input : meson.current_source_dir() / 'keyfile',
         command : ['install', '--mode=0600', '-D', '@INPUT@', '@OUTPUT@' / 'keyfile'],
 )
+systemd_repart_wrapper = find_program('systemd-repart-wrapper.sh')
 testsuite_24_keyfile = testsuite_24_keydev_root.full_path() / 'keyfile'
+# TODO: It is possible for the output file to need to be regenerated
+# because a dependency changed, but `--empty=create` requires the file to not exist
+# Identify the right options to force recreate the file.
 testsuite_24_keydev = custom_target('testsuite_24_keydev',
         output : 'testsuite-24-cryptsetup-keydev.raw',
         command : [
-                executables_by_name['systemd-repart'],
+                systemd_repart_wrapper,
+                '--systemd-repart', executables_by_name['systemd-repart'],
+                '@OUTPUT@',
+                '--',
                 '--dry-run=no',
-                '--empty=create',
                 '--size=auto',
                 '--offline=true',
                 '--root', testsuite_24_keydev_root,
                 '--definitions', meson.current_source_dir() / 'keydev.repart',
-                '@OUTPUT@',
         ],
         depends : [testsuite_24_keydev_root],
 )
