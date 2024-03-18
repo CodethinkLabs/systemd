@@ -1,3 +1,0 @@
-#!/bin/bash
-echo "Hello from dummy init, beautiful day, innit?"
-ip link
