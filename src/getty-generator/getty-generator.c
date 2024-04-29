@@ -77,6 +77,21 @@ static int add_container_getty(const char *tty) {
         return add_symlink("container-getty@.service", n);
 }
 
+static int add_virtio_getty(const char *tty) {
+        _cleanup_free_ char *n = NULL;
+        int r;
+
+        assert(tty);
+
+        log_debug("Automatically adding virtio getty for /dev/virtio-ports/%s.", tty);
+
+        r = unit_name_from_path_instance("virtio-getty", tty, ".service", &n);
+        if (r < 0)
+                return log_error_errno(r, "Failed to generate service name: %m");
+
+        return add_symlink("virtio-getty@.service", n);
+}
+
 static int verify_tty(const char *name) {
         _cleanup_close_ int fd = -EBADF;
         const char *p;
@@ -147,6 +162,7 @@ static int add_credential_gettys(void) {
         } table[] = {
                 { "getty.ttys.serial",    add_serial_getty     },
                 { "getty.ttys.container", add_container_getty  },
+                { "getty.ttys.virtio",    add_virtio_getty     },
         };
         int r;
 

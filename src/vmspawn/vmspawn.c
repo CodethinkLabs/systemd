@@ -175,6 +175,7 @@ static int help(void) {
                "                           Forward the VM's journal to the host\n"
                "     --pass-ssh-key=BOOL   Create an SSH key to access the VM\n"
                "     --ssh-key-type=TYPE   Choose what type of SSH key to pass\n"
+               "     --ssh-key-type=TYPE   Choose what type of SSH key to pass\n"
                "\n%3$sInput/Output:%4$s\n"
                "     --console=MODE        Console mode (interactive, native, gui)\n"
                "     --background=COLOR    Set ANSI color for background\n"
@@ -1202,8 +1203,8 @@ static int generate_ssh_keypair(const char *key_path, const char *key_type) {
 static int run_virtual_machine(int kvm_device_fd, int vhost_device_fd) {
         _cleanup_(ovmf_config_freep) OvmfConfig *ovmf_config = NULL;
         _cleanup_(sd_bus_flush_close_unrefp) sd_bus *bus = NULL;
-        _cleanup_free_ char *machine = NULL, *qemu_binary = NULL, *mem = NULL, *trans_scope = NULL, *kernel = NULL;
-        _cleanup_(rm_rf_physical_and_freep) char *ssh_private_key_path = NULL, *ssh_public_key_path = NULL;
+        _cleanup_free_ char *machine = NULL, *qemu_binary = NULL, *mem = NULL, *trans_scope = NULL, *kernel = NULL, *scope_prefix = NULL;
+        _cleanup_(rm_rf_physical_and_freep) char *ssh_private_key_path = NULL, *ssh_public_key_path = NULL, *qmp_path = NULL;
         _cleanup_close_ int notify_sock_fd = -EBADF;
         _cleanup_strv_free_ char **cmdline = NULL;
         _cleanup_free_ int *pass_fds = NULL;
@@ -1221,6 +1222,10 @@ static int run_virtual_machine(int kvm_device_fd, int vhost_device_fd) {
         r = start_transient_scope(bus, arg_machine, /* allow_pidfd= */ true, &trans_scope);
         if (r < 0)
                 return r;
+
+        r = unit_name_to_prefix(trans_scope, &scope_prefix);
+        if (r < 0)
+                return log_error_errno(r, "Failed to strip .scope suffix from scope: %m");
 
         if (arg_register) {
                 r = register_machine(bus, arg_machine, arg_uuid, trans_scope, arg_directory);
@@ -1285,7 +1290,8 @@ static int run_virtual_machine(int kvm_device_fd, int vhost_device_fd) {
                 "-m", mem,
                 "-object", "rng-random,filename=/dev/urandom,id=rng0",
                 "-device", "virtio-rng-pci,rng=rng0,id=rng-device0",
-                "-device", "virtio-balloon,free-page-reporting=on"
+                "-device", "virtio-balloon,free-page-reporting=on",
+                "-device", "virtio-serial"
         );
         if (!cmdline)
                 return log_oom();
@@ -1829,13 +1835,32 @@ static int run_virtual_machine(int kvm_device_fd, int vhost_device_fd) {
                         return r;
         }
 
-        if (arg_pass_ssh_key) {
-                _cleanup_free_ char *scope_prefix = NULL, *privkey_path = NULL, *pubkey_path = NULL;
-                const char *key_type = arg_ssh_key_type ?: "ed25519";
+        /* Connect to the QEMU monitor's JSON API if we are registering with machined so we can pass along
+         * the QMP path */
+        if (arg_register) {
+                _cleanup_free_ char *qmp_chardev = NULL, *qmp_path_escaped = NULL;
 
-                r = unit_name_to_prefix(trans_scope, &scope_prefix);
+                qmp_path = strjoin(arg_runtime_directory, "/", scope_prefix, "-qmp");
+                if (!qmp_path)
+                        return log_oom();
+
+                qmp_path_escaped = escape_qemu_value(qmp_path);
+                if (!qmp_path_escaped)
+                        return log_oom();
+
+                if (asprintf(&qmp_chardev, "socket,id=qmp,path=%s,server=on,wait=off", qmp_path_escaped) < 0)
+                        return log_oom();
+
+                r = strv_extend_many(&cmdline,
+                                "-chardev", qmp_chardev,
+                                "-mon", "qmp,mode=control");
                 if (r < 0)
-                        return log_error_errno(r, "Failed to strip .scope suffix from scope: %m");
+                        return log_oom();
+        }
+
+        if (arg_pass_ssh_key) {
+                _cleanup_free_ char *privkey_path = NULL, *pubkey_path = NULL;
+                const char *key_type = arg_ssh_key_type ?: "ed25519";
 
                 privkey_path = strjoin(arg_runtime_directory, "/", scope_prefix, "-", key_type);
                 if (!privkey_path)
@@ -1854,7 +1879,7 @@ static int run_virtual_machine(int kvm_device_fd, int vhost_device_fd) {
         }
 
         if (ssh_public_key_path && ssh_private_key_path) {
-                _cleanup_free_ char *scope_prefix = NULL, *cred_path = NULL;
+                _cleanup_free_ char *cred_path = NULL;
 
                 cred_path = strjoin("ssh.ephemeral-authorized_keys-all:", ssh_public_key_path);
                 if (!cred_path)
@@ -1863,10 +1888,6 @@ static int run_virtual_machine(int kvm_device_fd, int vhost_device_fd) {
                 r = machine_credential_load(&arg_credentials, cred_path);
                 if (r < 0)
                         return log_error_errno(r, "Failed to load credential %s: %m", cred_path);
-
-                r = unit_name_to_prefix(trans_scope, &scope_prefix);
-                if (r < 0)
-                        return log_error_errno(r, "Failed to strip .scope suffix from scope: %m");
         }
 
         if (ARCHITECTURE_SUPPORTS_SMBIOS)

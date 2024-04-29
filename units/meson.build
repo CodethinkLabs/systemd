@@ -11,6 +11,7 @@ units = [
         { 'file' : 'capsule.slice' },
         { 'file' : 'console-getty.service.in' },
         { 'file' : 'container-getty@.service.in' },
+        { 'file' : 'virtio-getty@.service.in' },
         {
           'file' : 'cryptsetup-pre.target',
           'conditions' : ['HAVE_LIBCRYPTSETUP'],
