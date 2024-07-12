@@ -324,7 +324,7 @@ static int parse_describe(sd_bus_message *reply, Version *ret) {
         char *version_json = NULL;
         _cleanup_(sd_json_variant_unrefp) sd_json_variant *json = NULL;
         sd_json_variant *contents_json = NULL;
-        bool newest = false, available = false, installed = false, obsolete = false, protected = false;
+        bool newest = false, available = false, installed = false, incomplete, obsolete = false, protected = false;
         int r;
 
         assert(reply);
@@ -346,6 +346,7 @@ static int parse_describe(sd_bus_message *reply, Version *ret) {
                                      { "newest",         SD_JSON_VARIANT_BOOLEAN, sd_json_dispatch_stdbool, PTR_TO_SIZE(&newest),        0 },
                                      { "available",      SD_JSON_VARIANT_BOOLEAN, sd_json_dispatch_stdbool, PTR_TO_SIZE(&available),     0 },
                                      { "installed",      SD_JSON_VARIANT_BOOLEAN, sd_json_dispatch_stdbool, PTR_TO_SIZE(&installed),     0 },
+                                     { "incomplete",     SD_JSON_VARIANT_BOOLEAN, sd_json_dispatch_stdbool, PTR_TO_SIZE(&incomplete),    0 },
                                      { "obsolete",       SD_JSON_VARIANT_BOOLEAN, sd_json_dispatch_stdbool, PTR_TO_SIZE(&obsolete),      0 },
                                      { "protected",      SD_JSON_VARIANT_BOOLEAN, sd_json_dispatch_stdbool, PTR_TO_SIZE(&protected),     0 },
                                      { "changelog_urls", SD_JSON_VARIANT_ARRAY,   sd_json_dispatch_strv,    PTR_TO_SIZE(&v.changelog),   0 },
